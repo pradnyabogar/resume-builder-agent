@@ -1,0 +1,8 @@
+requests
+beautifulsoup4
+python-docx
+openai
+python-dotenv
+lxml
+pypdf2
+docx2txt
