@@ -95,7 +95,6 @@ def generate_word_resume(resume_data: dict, output_path: str = "output") -> str:
     parts = [
         contact.get("email", ""),
         contact.get("phone", ""),
-        contact.get("location", ""),
         contact.get("linkedin", ""),
     ]
     contact_line = "   |   ".join(x.strip() for x in parts if x and x.strip())
@@ -115,40 +114,31 @@ def generate_word_resume(resume_data: dict, output_path: str = "output") -> str:
         for run in sp.runs:
             _set_font(run, 10)
 
-    # ── Core Skills (3-column grid) ───────────────────────────
+    # ── Core Skills (2 lines, bullet-separated) ──────────────
     skills = [s.strip() for s in (resume_data.get("skills") or []) if s and s.strip()]
     if skills:
         _section_heading(doc, "Core Skills")
-        cols = 3
-        rows = [skills[i:i+cols] for i in range(0, len(skills), cols)]
-        tbl = doc.add_table(rows=len(rows), cols=cols)
-        tbl.alignment = WD_TABLE_ALIGNMENT.LEFT
-        tbl.style = "Table Grid"
-
-        # Remove all borders for a clean look
-        tbl_el = tbl._tbl
-        tblPr  = tbl_el.find(qn("w:tblPr"))
-        if tblPr is None:
-            tblPr = OxmlElement("w:tblPr")
-            tbl_el.insert(0, tblPr)
-        tblBorders = OxmlElement("w:tblBorders")
-        for side in ("top","left","bottom","right","insideH","insideV"):
-            el = OxmlElement(f"w:{side}")
-            el.set(qn("w:val"), "none")
-            tblBorders.append(el)
-        tblPr.append(tblBorders)
-
-        for r_idx, row_data in enumerate(rows):
-            row = tbl.rows[r_idx]
-            for c_idx, skill in enumerate(row_data):
-                cell = row.cells[c_idx]
-                cell.text = ""
-                p = cell.paragraphs[0]
-                _para_spacing(p, before=1, after=1)
-                run = p.add_run(f"• {skill}")
+        
+        # Split into 2 lines - first line gets priority skills (more items), second line gets rest
+        mid_point = len(skills) // 2 + (len(skills) % 2)  # Slight bias to first line
+        line1_skills = skills[:mid_point]
+        line2_skills = skills[mid_point:]
+        
+        # First line
+        if line1_skills:
+            skills_line1 = " • ".join(line1_skills)
+            sp1 = doc.add_paragraph(skills_line1)
+            _para_spacing(sp1, before=2, after=0)
+            for run in sp1.runs:
                 _set_font(run, 10)
-
-        doc.add_paragraph()  # spacer after table
+        
+        # Second line
+        if line2_skills:
+            skills_line2 = " • ".join(line2_skills)
+            sp2 = doc.add_paragraph(skills_line2)
+            _para_spacing(sp2, before=0, after=3)
+            for run in sp2.runs:
+                _set_font(run, 10)
 
     # ── Professional Experience ───────────────────────────────
     experience = resume_data.get("experience") or []
@@ -193,6 +183,7 @@ def generate_word_resume(resume_data: dict, output_path: str = "output") -> str:
                 bp = doc.add_paragraph(style="List Bullet")
                 bp.paragraph_format.left_indent   = Inches(0.15)
                 bp.paragraph_format.first_line_indent = Inches(-0.15)
+                bp.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justify alignment for cleaner look
                 _para_spacing(bp, before=0, after=1)
                 run = bp.add_run(bullet)
                 _set_font(run, 10)
@@ -275,8 +266,10 @@ def generate_word_resume(resume_data: dict, output_path: str = "output") -> str:
                 _set_font(desc_run, 10)
 
     # ── Save ──────────────────────────────────────────────────
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%m%d%Y_%H%M")
     safe_name = name.replace(" ", "_").replace("/", "-").replace("\\", "-")
-    filename  = f"{safe_name}_Resume.docx"
+    filename  = f"{safe_name}_{timestamp}.docx"
     filepath  = os.path.join(output_path, filename)
     doc.save(filepath)
     return filepath

@@ -9,14 +9,15 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SKIP_DIRS = {"archive", "archived", "old", "backup"}
-MAX_CHARS_PER_FILE = 15_000   # ~3.7k tokens per file
-MAX_CHARS_TOTAL    = 80_000   # ~20k tokens for all docs, leaves room for JD + prompt + response
+MAX_CHARS_PER_FILE = 20_000   # ~5k tokens per file - increased to capture detailed docs
+MAX_CHARS_TOTAL    = 100_000  # ~25k tokens for all docs - increased budget for comprehensive content
 
 
 def load_docs_from_folder(folder: str = "docs") -> str:
     """
     Recursively read all resume/doc files from docs/ and subfolders.
     Skips: hidden files, archive/old/backup folders, empty files, John Doe placeholders.
+    Loads detailed accomplishment and work record docs first to maximize context for latest roles.
     """
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -24,7 +25,17 @@ def load_docs_from_folder(folder: str = "docs") -> str:
         return ""
 
     # Priority folders load first — most recent experience should be listed here
+    # Case-insensitive matching to catch "Resume 2026" and "resume 2026"
     PRIORITY_DIRS = ["resume 2026", "resume2026", "2026", "current", "latest"]
+    
+    # Priority files at root level — load these detailed docs FIRST
+    PRIORITY_ROOT_FILES = [
+        "pradnya_bogar_accomplishments.docx",      # Most detailed - has Amazon team split
+        "pradnya_bogar_complete_work_record.docx", # Detailed work history
+        "personal_ai_projects",                     # Personal AI projects
+        "pradnyabogar_2026_apr.docx",
+        "pradnyabogar_tpm_a"  # prefix match for latest TPM resume
+    ]
 
     combined  = []
     total_chars = 0
@@ -42,6 +53,16 @@ def load_docs_from_folder(folder: str = "docs") -> str:
         dirs  = sorted([e for e in entries if os.path.isdir(os.path.join(root_path, e))
                         and not e.startswith(".") and e.lower() not in SKIP_DIRS])
         files = sorted([e for e in entries if os.path.isfile(os.path.join(root_path, e))])
+
+        # If we're in the root docs folder, sort priority files first
+        if root_path == folder:
+            def file_priority(fname):
+                fname_lower = fname.lower()
+                for i, priority_file in enumerate(PRIORITY_ROOT_FILES):
+                    if priority_file in fname_lower:
+                        return i  # Lower number = higher priority
+                return 999  # Non-priority files
+            files = sorted(files, key=file_priority)
 
         # Process files in this directory first
         for fname in files:
@@ -90,9 +111,9 @@ def load_docs_from_folder(folder: str = "docs") -> str:
             combined.append(f"=== {rel_path} ===\n{text.strip()}")
             total_chars += len(text)
 
-        # Then recurse into subdirs — priority dirs go first
-        priority = [d for d in dirs if d.lower() in PRIORITY_DIRS]
-        rest     = [d for d in dirs if d.lower() not in PRIORITY_DIRS]
+        # Then recurse into subdirs — priority dirs go first (case-insensitive)
+        priority = [d for d in dirs if d.lower().replace(" ", "") in [p.replace(" ", "") for p in PRIORITY_DIRS]]
+        rest     = [d for d in dirs if d.lower().replace(" ", "") not in [p.replace(" ", "") for p in PRIORITY_DIRS]]
         for d in priority + rest:
             _walk_folder(os.path.join(root_path, d))
 
@@ -219,22 +240,47 @@ def build_resume(job_description: str, resume_docs: str, missing_keywords: list 
 YOUR STRICT RULES:
 
 COPY VERBATIM — do not change, invent, or omit:
-- Candidate full name, email, phone, LinkedIn, location
+- Candidate full name, email, phone, LinkedIn (do NOT include physical address or location)
 - Every degree, school name, and graduation year
 - Every job title, company name, and employment dates
 - Every certification
+- IMPORTANT: If the candidate held MULTIPLE ROLES/POSITIONS at the same company (different teams, promotions, role changes), create SEPARATE experience entries for each role at that company. Look for indicators like "promoted to", "transitioned to", "moved to [team name]", different job titles with overlapping company employment periods.
 
 REPHRASE ONLY THE WORDING — never the underlying facts:
-- Experience bullet points: same facts, stronger action verbs, mirror JD language. Include 4-6 bullets per role — extract as much relevant detail as possible from the docs for each position
-- Professional summary: based only on candidate's real background, 4-5 sentences
-- Skills: COPY exactly from docs, reorder by JD relevance only — do NOT add any new skills not present in the docs
+- Experience bullet points: same facts, stronger action verbs, mirror JD language
+  * CRITICAL: Extract 5-7 bullets per role (6-8 bullets for the MOST RECENT role at the top)
+  * Go DEEP into the documents — read ALL details about each role across ALL files
+  * Each bullet should showcase a major accomplishment, technical delivery, business impact, or leadership responsibility
+  * For the LATEST/CURRENT role: prioritize high-impact achievements with quantifiable results (revenue, efficiency, scale)
+  * Use strong action verbs (Led, Delivered, Drove, Built, Launched, Scaled, etc.)
+  * Weave in JD keywords naturally where they match the candidate's real work
+- Professional summary: based only on candidate's real background, 4-5 sentences highlighting most relevant experience for THIS role
+- Skills: ONLY include skills from docs that are HIGHLY RELEVANT to this specific JD. Limit to 16-20 most important skills. Exclude outdated or tangential technologies. Focus on: languages/tools mentioned in JD, transferable technical skills, key platforms/methodologies relevant to the role. Skip skills like old programming languages, obsolete tools, or anything not applicable to this job. IMPORTANT: Order skills by JD relevance - most critical skills FIRST (these appear on line 1 of resume), then supporting skills.
 
 NEVER:
 - Invent degrees, schools, years, job titles, companies, or dates not in the docs
 - Add skills or achievements the candidate has not demonstrated
 - Fabricate metrics or numbers not in the docs
-- Include any work experience, jobs, or projects dated before 2015 (education and certifications are fine)
+- Exclude ANY work experience from 2015 onwards (include ALL jobs from 2015 forward: Qualitrol 2015-2019, Fluke 2019-2021, Helpful Engineering 2021-2022, Amazon 2022-Present)
+- Include ANY work experience, jobs, or projects dated 2014 or earlier (education and certifications from any year are fine)
 - Include the projects "Nano Internet" or "Mobile Center" — these are outdated and must be excluded
+- Mix responsibilities from different roles at the same company into a single entry — keep them separate if candidate had multiple positions
+
+PROJECTS SECTION:
+- ONLY include AI/ML-related personal projects (personal AI projects, machine learning experiments, AI tools, LLM/GenAI projects)
+- Extract from "Personal AI Projects Summary" document
+- DO NOT include: non-AI projects, work-related projects (those belong in experience bullets), old academic projects, COVID ventilator project
+- If no AI projects exist in docs, leave projects array empty
+- Focus on: AI agents, chatbots, ML models, automation with AI, generative AI applications, prompt engineering projects
+
+EXTRACTION PRIORITY:
+1. LATEST ROLE (most recent job): Extract MAXIMUM detail — 6-8 impactful bullets covering major programs, technical scope, business outcomes, stakeholder management, and leadership
+2. Previous roles: 5-6 bullets each focusing on most relevant achievements for this JD
+3. Older roles (5+ years ago but 2015 or later): 4-5 bullets, focus on transferable skills and major deliverables
+4. MULTIPLE ROLES AT SAME COMPANY: If candidate worked in different teams/roles at the same company (e.g., "TPM on Team A" then "TPM on Team B", or "promoted from Engineer to Manager"), create separate experience entries for each role. Check docs for: role changes, team transitions, promotions, different focus areas at the same employer.
+5. CRITICAL: Include ALL work experience from 2015 onwards. The candidate's full career timeline is: Qualitrol (2015-2019) → Fluke (2019-2021) → Helpful Engineering (2021-2022) → Amazon (2022-Present with 2 teams). Do NOT skip any of these roles.
+
+READ THOROUGHLY: The candidate documents may contain multiple files describing the same roles — extract ALL relevant details from every file to build comprehensive, achievement-focused bullet points.
 
 Respond with valid JSON only — no markdown fences, no explanation."""
 
@@ -246,6 +292,18 @@ CANDIDATE DOCUMENTS (sole source of truth — extract all real data from here):
 {missing_kw_section}
 {no_docs_note}
 
+IMPORTANT EXTRACTION INSTRUCTIONS:
+- Read through ALL the candidate documents carefully — they contain detailed descriptions of the same roles across multiple files
+- For the MOST RECENT/CURRENT role (usually at Amazon): Check if the candidate worked on MULTIPLE TEAMS within the same company
+  * Look for mentions of: "Enterprise Engineering", "RME", "Reliability Maintenance Engineering", "Operations", team transitions, different focus areas
+  * If found, create SEPARATE experience entries for each team/role at Amazon with different dates
+  * Example: "TPM - Enterprise Engineering (dates)" and "TPM - RME (dates)" as separate entries
+  * Extract 6-8 bullets per Amazon role (one for Enterprise Engineering work, one for RME work)
+- For other roles: extract 5-6 bullets each, focusing on achievements most relevant to THIS job description
+- Look for: program scope, team size, budget/revenue impact, technical platforms, stakeholder groups, delivery timelines, process improvements, awards/recognition
+- Each bullet should tell a complete story: what was delivered, the technical/business scope, and the measurable impact
+- For PROJECTS: ONLY extract AI/ML-related personal projects from "Personal AI Projects Summary" document - NOT work projects, NOT non-AI projects like COVID ventilator (those go in experience bullets)
+
 Return this JSON:
 {{
   "ats_score_estimate": <estimated ATS score 0-100>,
@@ -255,17 +313,16 @@ Return this JSON:
     "contact": {{
       "email":    "<COPY exact email from docs>",
       "phone":    "<COPY exact phone from docs>",
-      "linkedin": "<COPY exact LinkedIn from docs, or empty string>",
-      "location": "<COPY exact location from docs, or empty string>"
+      "linkedin": "<COPY exact LinkedIn from docs, or empty string>"
     }},
     "summary": "<3-4 sentences from candidate perspective, real background, tailored to JD>",
-    "skills": ["<COPY skills exactly from docs, reordered by JD relevance — no new skills added>"],
+    "skills": ["<ONLY include 16-20 most JD-relevant skills from docs — exclude outdated/irrelevant skills. Order by JD relevance: MOST CRITICAL FIRST (tools/platforms mentioned in JD), then supporting skills. Focus on skills directly applicable to this role>"],
     "experience": [
       {{
-        "title":   "<COPY exact job title from docs>",
+        "title":   "<CRITICAL: For Amazon, check if candidate worked on different teams. If YES, create 2 separate entries: 'Technical Program Manager - Enterprise Engineering' and 'Technical Program Manager - Reliability Maintenance Engineering'. For other companies, use COPY exact job title from docs>",
         "company": "<COPY exact company name from docs>",
-        "dates":   "<COPY exact dates from docs>",
-        "bullets": ["<4-6 bullets per role — extract every relevant achievement and responsibility from the docs, rephrase with strong action verb and JD keywords, same facts better wording>"]
+        "dates":   "<CRITICAL: For Amazon with 2 teams, split the date range. Example: if Amazon total is Apr 2022-Present, and they switched teams in mid-2023, do 'Jul 2023-Present' for current team and 'Apr 2022-Jul 2023' for previous team. For other companies, COPY exact dates from docs>",
+        "bullets": ["<For Amazon roles: 6-8 bullets EACH (one set for Enterprise Engineering work, one set for RME work). For other roles: 5-6 bullets. Extract comprehensive detail from ALL docs, rephrase with strong action verbs and JD keywords, quantify impact where possible>"]
       }}
     ],
     "education": [
@@ -278,8 +335,8 @@ Return this JSON:
     "certifications": ["<COPY exact certifications from docs — empty list if none>"],
     "projects": [
       {{
-        "name":        "<COPY exact project name from docs>",
-        "description": "<real description rephrased with JD keywords>"
+        "name":        "<ONLY AI/ML-related personal projects from 'Personal AI Projects Summary' doc - examples: resume builder AI agent, personal chatbots, ML experiments, AI automation tools. NOT work projects, NOT COVID ventilator>",
+        "description": "<real description rephrased with JD keywords, emphasizing AI/ML technologies used>"
       }}
     ]
   }}

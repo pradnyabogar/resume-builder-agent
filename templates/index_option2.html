@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Option 2</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_option2.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 Resume Builder Agent</h1>
+            <p class="subtitle">Option 2: Calculate ATS Score First, Then Decide</p>
+        </header>
+
+        <!-- Step 1: Input Section -->
+        <section id="input-section" class="card">
+            <h2>Step 1: Upload Documents & Job Description</h2>
+            
+            <div class="form-group">
+                <label>📁 Upload Resume Documents (optional - uses existing docs/ folder)</label>
+                <input type="file" id="file-upload" multiple accept=".pdf,.doc,.docx,.txt">
+                <div id="upload-status" class="status-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>🔗 Job Posting URL</label>
+                <input type="text" id="job-url" placeholder="https://jobs.company.com/position/12345">
+                <button id="fetch-btn" class="btn btn-secondary">Fetch Job Description</button>
+            </div>
+
+            <div class="form-group">
+                <label>📝 Job Description</label>
+                <textarea id="job-description" rows="12" placeholder="Paste the job description here..."></textarea>
+            </div>
+
+            <button id="calculate-ats-btn" class="btn btn-primary">
+                🎯 Calculate ATS Score & Match Analysis
+            </button>
+        </section>
+
+        <!-- Step 2: Match Analysis Results -->
+        <section id="match-section" class="card" style="display: none;">
+            <h2>Step 2: Match Analysis Results</h2>
+            
+            <div id="match-results">
+                <div class="match-header">
+                    <div class="match-score">
+                        <span class="score-label">Match Score</span>
+                        <span id="match-percentage" class="score-value">--%</span>
+                    </div>
+                    <div class="match-rating">
+                        <span id="match-rating-text" class="rating-badge">--</span>
+                    </div>
+                </div>
+
+                <div class="match-recommendation">
+                    <h3>Recommendation</h3>
+                    <p id="recommendation-text">--</p>
+                </div>
+
+                <div class="match-summary">
+                    <h3>Summary</h3>
+                    <p id="summary-text">--</p>
+                </div>
+
+                <div class="match-details">
+                    <div class="match-column">
+                        <h3>✅ Your Strengths</h3>
+                        <ul id="strengths-list"></ul>
+                    </div>
+                    <div class="match-column">
+                        <h3>⚠️ Gaps to Address</h3>
+                        <ul id="gaps-list"></ul>
+                    </div>
+                </div>
+
+                <div class="missing-keywords">
+                    <h3>🔑 Missing Keywords</h3>
+                    <div id="keywords-list" class="keyword-tags"></div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="build-resume-btn" class="btn btn-primary btn-large">
+                    ✅ Build Tailored Resume
+                </button>
+                <button id="cancel-btn" class="btn btn-secondary">
+                    ❌ Cancel - Don't Build Resume
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 3: Resume Building Progress -->
+        <section id="progress-section" class="card" style="display: none;">
+            <h2>Building Your Resume...</h2>
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <p id="progress-message" class="progress-message">Initializing...</p>
+            </div>
+        </section>
+
+        <!-- Step 4: Download Section -->
+        <section id="download-section" class="card" style="display: none;">
+            <h2>✅ Resume Ready!</h2>
+            <div class="success-message">
+                <p>Your tailored resume has been generated successfully.</p>
+                <div class="resume-stats">
+                    <div class="stat">
+                        <span class="stat-label">ATS Score</span>
+                        <span id="final-ats-score" class="stat-value">--</span>
+                    </div>
+                </div>
+                <div id="suggestions-list" class="suggestions"></div>
+            </div>
+            <button id="download-btn" class="btn btn-primary btn-large">
+                📥 Download Resume
+            </button>
+            <button id="start-over-btn" class="btn btn-secondary">
+                🔄 Start Over
+            </button>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='app_option2.js') }}"></script>
+</body>
+</html>

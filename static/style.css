@@ -1,0 +1,219 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f0f2f5;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.container {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f497d;
+}
+
+header p {
+  color: #555;
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  position: relative;
+}
+
+.step-label {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #e8f0fe;
+  color: #1f497d;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1f497d;
+}
+
+h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: #333;
+}
+
+p { font-size: 0.9rem; color: #555; margin-bottom: 0.8rem; }
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed #b0c4de;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.drop-zone:hover, .drop-zone.dragover { background: #f0f6ff; border-color: #4472c4; }
+.link { color: #4472c4; cursor: pointer; text-decoration: underline; }
+
+#file-list { margin-top: 0.8rem; }
+.file-tag {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #1f497d;
+  border-radius: 20px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
+  margin: 0.2rem;
+}
+
+/* URL row */
+.url-row { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
+.url-row input {
+  flex: 1;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.url-row input:focus { outline: none; border-color: #4472c4; }
+
+button {
+  padding: 0.6rem 1.2rem;
+  background: #4472c4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button:hover { background: #1f497d; }
+button:disabled { background: #aaa; cursor: not-allowed; }
+
+textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+}
+textarea:focus { outline: none; border-color: #4472c4; }
+
+.warning {
+  background: #fff8e1;
+  border-left: 3px solid #f9a825;
+  padding: 0.6rem 0.9rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.8rem;
+}
+
+/* Run button */
+.run-btn {
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #1f497d;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+}
+.run-btn:hover { background: #163660; }
+
+/* Progress */
+.progress-bar-wrap {
+  background: #e8f0fe;
+  border-radius: 20px;
+  height: 10px;
+  margin-bottom: 0.8rem;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: #4472c4;
+  border-radius: 20px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+#progress-message { font-size: 0.9rem; color: #555; }
+
+/* Match report */
+.match-score {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f497d;
+  margin-bottom: 1rem;
+}
+.match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.match-grid ul { padding-left: 1.2rem; font-size: 0.88rem; color: #444; }
+.match-grid li { margin-bottom: 0.3rem; }
+
+.kw-tag {
+  display: inline-block;
+  background: #fce8e8;
+  color: #c0392b;
+  border-radius: 20px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.78rem;
+  margin: 0.15rem;
+}
+
+/* Result */
+.ats-badge {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #27ae60;
+  margin-bottom: 1rem;
+}
+#suggestions-list { padding-left: 1.2rem; font-size: 0.88rem; color: #444; margin-bottom: 1.2rem; }
+#suggestions-list li { margin-bottom: 0.4rem; }
+
+.download-btn {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  background: #27ae60;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.download-btn:hover { background: #1e8449; }
+
+/* Error */
+.error-card { border-left: 4px solid #e74c3c; }
+.error-card h2 { color: #e74c3c; }
+.error-card p { color: #555; margin-bottom: 1rem; font-size: 0.9rem; }
+
+.hidden { display: none !important; }
